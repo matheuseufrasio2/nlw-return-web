@@ -5,6 +5,8 @@ import { FeedbackType } from "..";
 import { feedbackTypes } from "../../../constants/feedbackTypes";
 import { CloseButton } from "../../CloseButton";
 import { ScreenshotButton } from "../ScreenshotButton";
+import { api } from "../../../services/api";
+import { Loading } from "../../Loading";
 
 type FeedbackContentStepProps = {
   feedbackType: FeedbackType;
@@ -15,29 +17,32 @@ type FeedbackContentStepProps = {
 export function FeedbackContentStep({ feedbackType, onFeedbackRestartRequested, onFeedbackSent }: FeedbackContentStepProps) {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [comment, setComment] = useState<string>('');
-  
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
+
   const feedbackTypeInfo = feedbackTypes[feedbackType];
 
-  function handleSubmitFeedback(event: FormEvent) {
+  async function handleSubmitFeedback(event: FormEvent) {
     event.preventDefault();
-
-    console.log({
-      screenshot,
+    setIsSendingFeedback(true)
+    await api.post('/feedbacks', {
+      type: feedbackType,
       comment,
-    })
+      screenshot,
+    });
 
+    setIsSendingFeedback(false);
     onFeedbackSent();
   }
-  
+
   return (
     <>
       <header>
         <button onClick={onFeedbackRestartRequested} className="top-5 left-5 absolute text-zinc-400 hover:text-zinc-100">
-          <ArrowLeft weight="bold" className="w-4 h-4"/>
+          <ArrowLeft weight="bold" className="w-4 h-4" />
         </button>
         <span className="text-xl leading-6 flex items-center gap-2">
           <img
-            src={feedbackTypeInfo.image.source} 
+            src={feedbackTypeInfo.image.source}
             alt={feedbackTypeInfo.image.alt}
             className="w-6 h-6"
           />
@@ -59,11 +64,11 @@ export function FeedbackContentStep({ feedbackType, onFeedbackRestartRequested, 
             onScreenshotTook={setScreenshot}
           />
           <button
-            disabled={comment.length === 0}
+            disabled={comment.length === 0 || isSendingFeedback}
             type="submit"
             className="p-2 bg-brand-500 rounded-md border-transparent flex-1 flex justify-center items-center text-sm hover:bg-brand-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-zinc-900 focus:ring-brand-500 transition-colors disabled:opacity-50 disabled:hover:bg-brand-500"
           >
-            Enviar feedback
+            {isSendingFeedback ? <Loading /> : 'Enviar feedback'}
           </button>
         </footer>
       </form>
